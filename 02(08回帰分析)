@@ -1,0 +1,59 @@
+#回帰モデルの作成
+	#単回帰式から単回帰モデルを導出
+
+#モデルにおける母数の推定
+data0110<-read.csv(".csv")
+
+	#重回帰分析の実行
+res_data0110<-lm(Rent~Area+Walk+Year+Structure,data=data0110)
+summary(res_data0110)
+
+
+#推定結果の診断、多重共線性のチェック
+
+##重回帰分析の説明変数間の相関係数の絶対値が大きい場合は、偏回帰係数の推定値の標準誤差を正しく推定できない問題が生じる。
+##これを多重共線性という。
+
+cor(data0110$Area,data0110$Year)
+	#説明変数間の相関が高い場合の重回帰分析の出力
+resm_data0110<-lm(Rent~Area,data=data0110)	#単回帰分析
+summary(resm_data0110)
+resj_data0110<-lm(Rent~Area+Year,data=data0110)	#重回帰分析
+summary(resj_data0110)
+#単回帰と重回帰との比較をする
+	#単回帰係数の標準誤差Std.Errorの大きさ（0に近いことが望ましい）
+	#ここで多重共線性を測定するために指標「VarianceInflationFactor（分散拡大要因）」を用いことで客観的に診断できる。
+	#2未満が望ましい
+	#10以上で多重共線性の要因
+library(car)		#vif関数のためのパッケージ
+vif(resj_data0110)	#Rent~Area+Yearの場合
+vif(res_data0110)	#Rent~Area+Walk+Year+Structureの場合
+
+#モデルの診断と評価
+#1.R^2	#説明変数を増やすだけで値が向上する性質
+#2.R(adjusted)自由度調整済み(決定係数の下方修正をする役割)
+#3.F検定(母集団における偏回帰係数βが全て0という帰無仮説の結果)
+#4.p値(小さければ、帰無仮説は棄却＝少なくとも1つの説明変数は母集団で目的変数を説明している)
+
+#偏回帰係数：β()
+#切片：Intercept(説明変数が全部0のときの目的変数の期待値、実際の分析では考慮されることはほとんどない)
+#偏回帰係数の解釈
+###重回帰分析
+
+
+
+###質的変数を含めた重回帰分析
+resj_quarity<-lm(Rent~Area+Walk+Year+Structure,data=data0110)	#Structureが量的変数
+
+#AICとBICで、モデルの評価
+#"AICやBICの値が小さいモデルの方が適合が良好"
+
+##AIC(Akaike information criterion)
+extractAIC(resm_data0110)	#単回帰
+extractAIC(resj_data0110)	#重回帰(量的変数のみ)
+extractAIC(res_data0110)	#重回帰(質的変数を含む)
+##BIC(Baysian information criterion)
+###k=log(N)は"N=観測対象の数"の自然対数
+extractAIC(resm_data0110, k=log(30))	#単回帰
+extractAIC(resj_data0110, k=log(30))	#重回帰(量的変数のみ)
+extractAIC(res_data0110, k=log(30))	#重回帰(質的変数を含む)
