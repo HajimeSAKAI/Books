@@ -1,0 +1,41 @@
+data<-read.csv(,header="T")
+str(data)	#データ構造の出力
+
+data0110$RentalFee<-apply(data0110[,2,5],1,sum)	#合計を実際賃料をデータに追加
+
+#度数分布表
+table(data0110$Rent)
+
+#変数と度数分布表
+fscore<-factor(score,level=seq(0,10,1))	#関数factorによって変換
+str(fscore)	#構造の確認
+table(fscore)
+
+#条件抽出(一致、不一致)
+data0110_1<-subset(data0110,Number=="1")
+data0110_2<-subset(data0110,Number!="[,2:16]")
+head()
+
+#条件抽出(大なり、小なり)
+data0110_3<-subset(data0110,Number<2)	#2より小さく、2を含まない
+data0110_4<-subset(data0110,Number<=2)	#2より小さく、2を含む
+data0110_3<-subset(data0110,Number>10)	#10より小さく、10を含まない
+data0110_4<-subset(data0110,Number>=10)	#10より小さく、10を含む
+
+#条件抽出（論理和、論理積）
+#論理和（駅が1、又は構造が1）
+data0110_7<-subset(data0110,(number=="1")|(Structure=="1"))
+#論理積（駅が1、かつ賃料が50000以上、かつ面積が50以上）
+data0110_8<-subset(data0110,(number=="1")&(Rent>=50000)&(Area>=50))
+
+#論理積と論理和（（駅が1、かつ（賃料が50000以上、又は面積が50以上））
+data0110_9<-subset(data0110,
+(number=="1")&
+((Rent>=50000)|(Area>=50)))
+
+##############################################################
+#subsetを使わない方法
+cond<-(data0110$Number=="1")&((data0110$Rent>=50000)|(data0110$Area>=50))
+head(cond)
+
+data0110_ammend<-data0110[cond,]
