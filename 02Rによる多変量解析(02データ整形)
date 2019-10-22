@@ -1,0 +1,92 @@
+#欠損値が数値で以上に大きい場合
+#数値をNAに変換する
+kesson<-read.csv("",na.string=c(...))
+
+#欠損値除去
+kesson_out<-na.omit(kesson)
+
+#na.omitを使用しない方法
+cind<-complete.case(kesson)
+kesson_out2<-kesson[cind,]
+
+#データフレームをマージして横集計
+merge(data0110,data0210,by="Number")	#byには両方のデータに共通して含まれる変数を指定する
+
+#欠損値のある行を残すマージ
+merge(data0110,data0210,by="Number",all=TRUE)
+
+
+fname<-dir()	#作業ディレクトリの中身を表示
+
+
+###複数のデータフレームを一括で読み込む
+tmp<-lapply(fname,read.csv,stringsAsFactors=FALSE)	#lapplyを使ってフォルダ内のデータをすべて読み込む
+#複数のデータフレームを縦に繋げる
+posall<-do.call(rbind,tmp)	#do.callとrbindを併用してデータフレームを縦に繋げる
+
+#factor型への変換
+locv<-("顧客ID","店舗","商品カテゴリ")
+posall[,locv]<-lapply(posall[,locv],as.factor)
+
+#顧客IDによるソート
+tmploc<-order(posall$顧客ID,posall$購買日,posall$購買時間)
+pos<-posall[tmploc,]
+head(pos)
+
+#POSレジのRFM分析（顧客の優良性を評価する分析）
+R<-tapply(posall$購入日,posall$顧客ID,max)
+F<-tapply(posall$顧客ID,posall$顧客ID,length)
+M<-tapply(posall$購入金額,posall$顧客ID,sum)
+
+rfm<-data.frame(R=R,F=F,M=M)
+tmploc2<-order(rfm$M,rfm$F,rfm$R,decreasing=TRUE)	#優先順位をM>F>R順として降順にソート
+rfm2<-rfm[tmploc2,]	#ソートしたデータフレームを保存
+rfm2[1:7,]	#上位20%以内（36人*0.2=7.2人）の顧客の表示
+
+#全体
+t1<-table(posall$顧客ID,posall$商品カテゴリ)
+#店舗別
+t2<-xtabs(~顧客ID+商品カテゴリ+店舗,data=posall)
+#購買日別
+t3<-xtab(~顧客ID+商品カテゴリ商品カテゴリ+購買日,data=posall)
+
+###クロス集計表(Factor型)
+dim(table(posall[,c("顧客ID","商品カテゴリ")])	#データ全体のクロス集計表の行数と列数を求める
+storeA<-subset(posall,店舗=="A")
+dim(table(storeA[,c("顧客ID","商品カテゴリ")])	#店舗Aにおけるクロス集計表の行数と列数を求める
+
+#顧客の月ごとの購買金額を求める
+cid<-posall$顧客ID	#顧客IDと購買月を指定
+buym<-substr(posall$購買日,1,6)	#第2、第3引数には、抽出する文字列の始点と終点を与えている
+resmat<-tapply(posall$購買金額,list(cid,buym),sum)
+
+resmat[is.na(resmat)]<-0
+head(resmat,3)
+
+#顧客の買った商品名を取得
+getitemname<-function(x)	#getitemname関数の読み込み
+{
+return(names(which(x>=1)))
+}
+
+#クロス集計表に関数を適用する
+res2<-apply(t1,1,getitemname)
+head(res2,2)	#最初の2要素を抽出
+
+#IDごとに来店間隔の分布
+tmpdate<-paste(substr(posall$購買日,1,4),"-"	#来店日を文字列に変換
++substr(posall$購買日,5,6),"-",substr(posall$購買日,7,8),sep="")
+tmpdate[1:5]
+
+ndate<-as.Date(tmpdate)	#文字列をdate形式に変換する
+restime<-tapply(ndate,posall$顧客ID,diff9	#顧客別に来店価格を求める
+head(restime,2)	#二人分の来店間隔を表示
+
+###分布の描画
+restime2<-lapply(restime,as.numetric)	#リストの要素を数値化
+par(mfrow=c(2,3))	#横3,縦2で表示
+lapply(restime2[1:6],hist,breaks=10,xlab="diff",main="")
+
+#ID別に来店間隔の分布を表示
+library(psych)
+resd<-lapply(restime2,describe)	#psychのdescribe関数で要約して、resdに入れる
