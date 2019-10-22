@@ -1,0 +1,282 @@
+#ggplotはtidyverseに内包されている
+install.packages("tidyverse")
+library(tidyverse)
+
+##ggplotはグラフを構成する要素をパズルのように組み合わせて描画する
+g<-ggplot()
+
+##可視化の種類について	https://www.rstudio.com/resources/cheatsheets/
+##			http://ggplot2.tidyverse.org/reference/index.html
+###geom_histogram()	#ヒストグラム
+###geom_bar()		#棒グラフ
+###geom_line()		#折れ線グラフ
+###geom_point()		#散布図
+###geom_boxplot()	#箱ひげ図
+###geom_text()		#テキストラベル
+###geom_errorbar()	#誤差棒
+
+#可視化の例
+g<- ggplot()+	###方法1
+geom_xxx()
+g<- ggplot()	###方法2
+g<- g+geom_xxx()
+#出力
+print(g)
+plot(g)
+
+ggplot()+	#段差のあるヒストグラム
+geom_histogram(data=data0110,mapping=aes(x=Rent))
+ggplot()+	#滑らかなデータ分布
+geom_density(data=data0110,mapping=aes(x=Rent))
+
+##散布図
+ggplot()+
+geom_point(data=data0110,mapping=aes(x=Rent,y=Number))
+##散布図+近似直線
+ggplot()+
+geom_pont(data=data0110,mapping=aes(x=Rent,y=Number))+
+geom_smooth(data=data0110,mapping=aes(x=Rent,y=Number),method="lm)
+
+ggplot(data=data0110,mapping=aes(x=Rent,y=Number))+
+geom_point()+
+geom_smooth(method="lm")
+
+#dplyrでfilterして、特定データを抽出
+data0110_upper1981 <- filter(data0110,Year>=1981)
+data0110_lesser1981<- filter(data0110,Year< 1981)
+ggplot(mapping=aes(x=Rent,y=Number))+	#描画
+geom_point(data=data0110_upper1981)+
+geom_point(data=data0110_lesser1981)
+
+
+#グラフにを色付ける
+ggplot(data=data0110,mapping=aes(x=Rent,y=Number,group=Area,colour=Area))+
+geom_point()
+ggplot(data=data0110,mapping=aes(x=Rent,y=Number,group=factor(Area),
+colour=factor(Area)))+
+geom_point()
+
+
+ggplot(data=data0110,mapping=aes(x=Rent,y=Number))+
+geom_point()+
+geom_smooth(mapping=aes(group=factor(Area),colour=factor(Area)),method="lm")
+
+ggplot(data=data0110,mapping=aes(x=Rent,y=Number))+
+geom_point()+
+geom_smooth(mapping=aes(group=factor(Area)),method="lm")
+
+
+##分割
+ggplot(data=data0110,mapping=aes(x=Rent,y=Number))+
+geom_point()+
+facet_wrap(~Number)
+##縦分割
+ggplot(data=data0110,mapping=aes(x=Rent,y=Number))+
+geom_point()+
+facet_grid(.~Number)
+##横分割
+ggplot(data=data0110,mapping=aes(x=Rent,y=Number))+
+geom_point()+
+facet_grid(Number.~)
+
+
+ggplot(data0110=data0110,mapping=aes(x=Rent,y=Number))+
+geom_point()+
+facet_wrap(Year~Area)
+##クロス集計表
+ggplot(data0110=data0110,mapping=aes(x=Rent,y=Number))+
+geom_point()+
+facet_grid(Year~Area)
+
+
+mean_Number <- data0110 %>%
+group_by(class) %>%
+summarise(Rent = mean(Rent))
+
+ggplot(data=mean_Number,mapping=aes(x=Rent,y=Number))+
+geom_bar(stat="identity")
+
+
+
+ggplot(data=mean_Number,mapping=aes(x=NUmber,y=Rent))+
+geom_bar(stat="summary",fun.y="mean")
+
+ggplot(data=mean_Number,mapping=aes(x=NUmber,y=Rent))+
+stat_summary(geom="bar",fun.y="mean")
+
+ggplot(data=mean_Number,mapping=aes(x=NUmber,y=Rent))+
+stat_summary(stat="pointrange",fun.y="mean",fun.ymax"max",fun.ymin="min")
+###geom="pointrange"は省略可能
+
+
+mean_se(data0110$Rent)
+ggplot(data=data0110,mapping=aes(x=Number,y=Rent))+
+stat_summary(geom="bar",fun.y="mean",fill="grey")+
+stat_summary(geom="pointrange",fun.data="mean_se")
+
+
+
+ggplot(data=data0110,mapping=aes(x=factor(Number),y=displ))+
+stat_summary(fun.y="mean",geom="line")
+
+ggplot(data0110,mapping=aes(x=factor(Year),y=displ))+
+stat_summary(fun.y="mean",geom="line",group=1)
+
+#デフォルトの散らばりの設定
+ggplot(data=data0110,mapping=aes(x=Number,y=Rent))+
+stat_summary(geom="bar",fun.y="mean")+
+geom_jitter(mapping=aes(colour=Number),show.legend=FALSE)
+#水平方向のみ散らばりの設定
+ggplot(data=data0110,mapping=aes(x=Number,y=Rent))+
+stat_summary(geom="bar",fun.y="mean")+
+geom_jitter(mapping=aes(colour=Number),width=0.4,height=0,show.legend=FALSE)
+
+
+
+#グラフの描画で特定範囲の拡大
+ggplot(data=data0110,mapping=aes(x=Rent,y=Area))+	#通常の描画
+geom_point()+
+geom_vline(xinterceot=4)+
+geom_hline(yintercept=15)+
+geom_smooth(method="lm",se=FALSE)
+
+ggplot(data=data0110,mapping=aes(x=Rent,y=Area))+	#範囲拡大の場合
+geom_point()+
+geom_cartesian(xlim=c(1.5,4.5),ylim=c(10,35))+
+geom_vline(xinterceot=4)+
+geom_hline(yintercept=15)+
+geom_smooth(method="lm",se=FALSE)
+
+#XY軸の反転
+ggplot(data=data0110,mapping=aes(x=Rent,y=Area))+	#通常のバイオリン描画
+geom_violin()+
+stat_summary(fun.data="mean_se")
+
+ggplot(data=data0110,mapping=aes(x=Rent,y=Area))+	#反転した場合のバイオリン描画
+geom_violin()+
+stat_summary(fun.data="mean_se")
+coord_flip()
+
+
+
+
+#グラフの保存(ggplotバージョン)
+g<-ggplot(data=data0110,mappingaes(x=Rent,y=Area))+
+stat_summary(geom="bar",fun.y=mean)
+ggsave(plot=g,filename="Area_Rent.png",			#ggplotの保存方法
+dpi=300,height=20,width=20,units="cm")
+
+
+##グラフテーマの変更方法
+ggplot(data=data0110,mapping=aes(x=Rent,y=Area))+
+theme_classic()						#描画のテーマ
+geom_point()
+ggplot(data=data0110,mapping=aes(x=Rent,y=Area))+
+theme_bw()						#描画のテーマ
+							#"theme_bw"でテーマの詳細設定の確認ができる
+							#"theme_set(theme_bw)"でユーザーによる任意設定が可能
+geom_point()
+
+##文字についての変更(サイズ、フォント)
+ggplot(data=data0110,mapping=aes(x=Rent,y=Area))+
+theme_classic(base_size=25,base_family="serif")		#文字のサイズ、フォントの変更
+geom_point()
+
+
+#描画の配色の変更
+ggplot(data=data0110,mapping=aes(x=Number,y=Area,fill=drv))+	###デフォルト
+geom_boxplot()
+ggplot(data=data0110,mapping=aes(x=Number,y=Area,fill=Number))+	###手動
+geom_boxplot()+
+scale_fill_manual(values=c("1"="black","2"="grey","3"="#ffffff","4"="red"))
+ggplot(data=data0110,mapping=aes(x=Number,y=Area,fill=Number))+	###半自動
+geom_boxplot()+
+scale_fill_grey(start=0.4,end=0.9)
+ggplot(data=data0110,mapping=aes(x=Number,y=Area,fill=Number))+	###半自動
+geom_boxplot()+
+scale_fill_grey(start=1,end=0)					###0が黒、1が白
+
+##カラーパレットを使って精彩のあるグラフの描画
+install.packages("RColorBrewer")
+library(RColorBrewer)
+display.brewer.all()						###RColorBrewerカラーパレットの表示
+ggplot(data=data0110,mapping=aes(x=Number,y=Area,fill=Number))+	
+geom_boxplot()+
+scale_fill_brewer(palette="Paired")				###Paired(RColorBrewer内)を使用
+install.packages("viridis")
+library(viridis)
+ggplot(data=data0110,mapping=aes(x=Number,y=Area,fill=Number))+	
+geom_boxplot()+
+scale_fill_viridis(discrete=TRUE)				###"scale_fill_viridis()"を使用
+ggplot(data=data0110,mapping=aes(x=Number,y=Area,fill=Number))+	
+geom_boxplot()+
+scale_colour_viridis()						###"scale_colour_viridis()"を使用
+###scale_fill_colorbind()を使って、出力を多様化
+ggplot(data=data0110,mapping=aes(x=Number,y=Area,fill=Number))+	
+geom_boxplot(show.legend=FALSE)+
+scale_fill_colorbind()
+
+
+#ラベルを変更する
+ggplot(data=data0110,mapping=aes(x=Number,y=Area,group=factor(Number),	###通常バージョン
+colour=factor(Number)))+
+geom_point()
+ggplot(data=data0110,mapping=aes(x=Number,y=Area,group=factor(Number),	###ラベル変更
+colour=factor(Number)))+
+geom_point()+
+labs(title="賃料と賃貸面積との関係"
+subtitle="SUUMOデータを使用した場合"
+caption="出典：xx",
+x="賃料(円)",
+y="面積(m2)",
+colour="駅番号"
+)
+
+
+
+
+#ggplotに関する便利なパッケージ
+#
+install.packages("ggplotgui")		##ggplotGUIのインストール
+library(ggplotgui)
+ggplot_shiny(dataset=data0110)		###ggplotGUIのウィンドウの表示(マウス操作が可能になる)
+
+#
+install.packages("ggpubr")		##Plotlyのインストール
+library(ggpubr)
+g1<-ggplot(data=data0110,mapping=aes(x=Rent,y=Area))+
+theme_classic()+
+geom_point(colour="seagreen")
+g2<-ggplot(data=data0110,mapping=aes(x=Rent,y=Year))+
+theme_classic()+
+geom_point(colour="lightskyblue")
+
+ggarange(g1,g2,labels=c("賃貸面積","築年次"),
+ncol=2,hjust=-1.5)			##横に二つ並べて表示
+
+
+#順番の変更
+weight_time<-data.frame(
+time=c("pre","p_2day","p_10day","p_20day"),
+weight=c(73,70,69,67)
+)
+ggplot(data=weight_time,mapping=aes(x=time,y=weight))+
+geom_point()+
+geom_line(group=1)+
+coord_cartesian(ylim=c(50,65))
+
+weight_time$time<-fct_relevel(weight_time$time,"pre","p_2day")	##任意の順番に指定する関数
+###weight_time$time<-fct_inorder(weight_time$time)		##データセット内に現れた順番を反映させる関数
+ggplot(data=weight_time,mapping=aes(x=time,y=weight))+
+geom_point()+
+geom_line(group=1)+
+coord_cartesian(ylim=c(50,65))
+
+
+
+#tidyverseの様々な関数を使うことでggplot2の真価が発揮できる!!
+
+##ggplot2の利点
+##1.統一された文法
+##2.グラフの再現可能性
+##3.豊富な拡張パッケージ
