@@ -1,0 +1,145 @@
+read.csv("",header="T")
+
+colnames(data0110)	#変数の名前の確認
+dim(data0110)	#行列数の確認
+
+#単変量解析###############################
+library(lattice)	#latticeパッケージ
+#図_ヒストグラムの作成
+histogram("Number", data=data0110,breaks=16,type="count")
+#count=数
+#percent=百分率
+
+mean(data0110$Number)	#平均値
+median(data0110$Number)	#中央値
+sort(table(data0110$Number))	#table()内の最頻値
+
+#分散は標準偏差より大きい
+sd(data0110$Number)	#の標準偏差
+var(data0110$Number)	#の分散
+
+#中央値から平均偏差の算出
+mean(abs(data0110$Number-median(data0110$Number)))
+
+#図_群別にヒストグラムを描画
+histogram("Rent|Walk+Number,data=data0110,breaks=20)
+
+#数値_群間での分布比較
+tapply(data0110$Rent,data0110$Structure,mean)	#構造ごとに賃料の平均値を求める
+tapply(data0110$Rent,data0110$Structure,sd)	#構造ごとに賃料の標準偏差を求める
+
+#図_箱ひげ図
+boxplot(data0110$Rent,horizontal=TRUE)
+boxplot(Rent~Number,data=data0110,horizontal=TRUE)
+
+#数値_四分位数
+summary(data0110$Rent)
+#数値_t検定（等分散を仮定）	#p検定で有意水準N%を棄却できるか？＝2群の母分散は等しいか？
+var.test(Rent~Number,data=data0110)			#等分散性に関するF検定
+
+t.test(Rent~Number,data=data0110,var.equal=TRUE)	#独立な2群のt検定
+
+#もし、var.testで等分散の検定が有意、Welch法を利用したt検定
+t.test(Rent~Number,data=data0110)
+
+library(gplots)
+#群ごとの信頼区間を描画
+plotmeans(Rent~Number,data=data0110,p=0.95)
+#信頼区間の算出
+t.test(data0110$Rent[data0110$Number=="1"])	#駅1における信頼区間
+t.test(data0110$Rent[data0110$Number=="2"])
+t.test(data0110$Rent[data0110$Number=="3"])
+
+#多変量解析###############################
+var.name <- c("Rent","Area","Year","NSEW")
+data0110_var <- data0110[,varname]
+
+#変数に対する基礎集計
+apply(data0110_var,2,mean)
+#第1引数は、データフレーム
+#第2引数は、1=行方向、2=列方向
+#第3引数は、関数名
+apply(data0110_var,2,sd)
+
+#観測対象に対する基礎集計
+apply(data0110_var,1,mean)
+apply(data0110_var,1,sd)
+
+#多変量分布を群間で比較
+by(data0110_var,data0110$Number,apply,2,mean)	#colMeanでも代用可能
+
+#多変量解析はデータの標準化が必要になることがある=scale関数
+zscore<-scale(data0110)	#z得点の算出
+head(zscore,2)
+tscore <- zscore*10+50	#偏差値の算出
+head(tscore,2)
+
+#散布図の描画
+rent_data0110<-data0110$Rent
+area_data0110<-data0110$Area
+plot(rent_data0110,area_data0110,xlab="賃料",ylab="面積")
+
+#散布図行列
+rental_relation_data0110 <- c("Rent","Area","Walk","Year")
+plot(data0110[,reantal_relation_data0110])
+
+#層別散布図の描画
+xyplot(Rent~Area|Number+Structure,data=data0110)
+
+#相関係数行列
+cor(data0110$Rent,data0110$Area)
+cor(data0110[,rental_relation_data0110])
+#共分散行列
+cov(data0110[,rental_relation_data0110])
+
+#相関係数の検定############################
+library(psych)
+corkekka<-cor.test(data0110[,rental_relation_data0110])
+corkekka$t	#t値の算出
+corkekka$p	#p値の算出
+
+#クロス集計表の作成
+(cross<-table(data0110$Number,data0110$Structure)
+#クロス集計表の割合表記
+ptop.table(cross)	#全度数を基準
+prop.table(cross,1)	#行方向の割合
+prop.table(cross,2)	#列方向の割合
+
+#層別クロス集計表
+xtab("Rent+Area+Number,data=data0110)	#data$Numberごとでクロス集計表
+
+#連関係数の算出
+library(vcd)
+(cross<-table(data0110$Number,data0110$Structure)
+assocstats(cross)	#NumberとStructureとの連関係数の算出
+
+(m1<-matrix(c,50,0,0,50),ncol=2)
+assocstats(m1)	#完全連関のクロス集計表における連関係数
+(m2<-matrix(c(10,20,100,200),ncol=2))	#独立のケース
+assocstats(m2)	#独立したクロス集計表における連関係数
+
+#クロス集計表に関するカイ2乗検定
+(reschisq<-chisq.test(cross))
+#残差分析
+reschisq$stdres
+
+#偏相関係数の算出
+sixname<-c("Rent","Area","Year","Walk","NSEW")
+data0110_3<-data0110[,sixname]
+#$?
+partial.r(data0110_3,c(2,6),c(3,4,5))
+
+#順序カテゴリカル変数を含めたデータフレームの作成
+#階級幅の作成
+(sogoc<-c(-Inf,mean(data0110$Rent),Inf))
+#階級幅を利用してデータを0と1とに変換する
+(scat<-cut(data0110$Rent,breaks=sogoc,right=FALSE,labels=c(0,1)))
+#多値カテゴリカル変数化するための階級幅を作成する
+(ginoc<-c(-Inf,summary(data0110$Rent)[c(2,5],Inf))
+#階級幅を利用してデータを0と1と2に変換する
+(gcat <- cut(data0110$Rent,breaks=ginoc,right=FALSE,labels=c(0,1,2)))
+
+#順序カテゴリカル変数を含めた相関行列の算出
+library(polycor)
+data0110_categ<-data.frame(A=scat,B=gcat,C=data0110$Number)
+hetcor(data0110_categ,ML=TRUE)	#サイケン法で相関行列の算出
