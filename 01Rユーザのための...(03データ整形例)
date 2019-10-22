@@ -1,0 +1,128 @@
+#tidy dataに変換する
+library(tidyverse)
+##縦長に変換する
+tidy_data0110 <- gather("データ",
+key="キーの列の名前",value="値の列の名前",	#新しくできる列の名前の指定
+"変形する対象の列1","変形する対象の列2")	#変形する対象の列を指定
+##横長に戻す
+spread(tidy_data0110,key="キーの列の名前",value="値の列の名前")
+
+#dplyr関数を使う
+###1つのデータフレームを操作する
+###2つのデータフレームを結合する
+###ベクトルを操作する
+
+##パイプライン(%>%)を使ってデータフレームを編集
+data0110 %>%
+select(Rent,Area,Parking,Walk,Year) %>%	#列の絞り込み
+select(Rent:Year) 			#列の絞り込み(Rent~Yearまで)
+#select(one_of(c("A","B")))			#指定した文字列のいずれかに一致する列
+
+data0110 %>%
+filter(n() >= 20) %>%			#行列の縦数と横数の確認
+filter(Number == "1") %>%		#行の絞り込み
+
+###filter(条件1,条件2, ... )		#両方満たす
+####filter(条件1 & 条件2, ... )		#両方満たす
+####filter(条件1 | 条件2, ... )		#いずれかを満たす
+####filter(!(Number == "1" | Year >=1981)	#どちらも満たさない
+
+mutate(Now = ceiling(2019-Year))	#新しい列を作成
+###ceiling()は、値を切り上げる関数
+###as.integer()
+###ceiling()の結果は数値型で、整数型に変換
+
+data0110[data0110$Number=="1",]		#条件が1つ以上のときは冗長になる
+
+data0110 %>%
+filter(
+Number=="1",
+Rent >=50000,
+Rent <100000
+)
+
+#arrange関数でデータの並び替え
+data0110 %>%
+arrange(Rent, Area)	#Rentを昇順で並び替え(小さい順)、同値の場合Areaで並び替え
+arrange(-Rent, Area)	#Rentを降順で並び替え(大きい順)、同値の場合Areaで並び替え
+arrange(desc(Rent))
+
+#列名の変更
+data0110 %>%
+rename(NUMBER=Number, RENT=Rent)
+
+data0110 %>%
+summaries(displ_max=max(displ))
+data0110 %>%
+summaries(displ_range=max(displ))
+
+#グループ化
+###平均値が基準値以上のグループデータを絞り込み
+###グループごとに移動平均を計算
+###グループごとの分散を計算
+data0110 %>%
+group_by(,)	#第1引数に対象のデータを第2引数以降にグループ分けに使う
+ungroup(data0110)
+
+#ウィンドウ関数について
+
+##Δ(微小変位)を求める方法
+###時系列データ %>%
+###group_by(store)
+###mutate(sales_diff = sales - lag(sales))	####一個前のsalesとの差を求め、列を挿入
+
+##lag(),lead()	#値をずらす
+##min_rank(),dense_rank(),percent_rank(),cum_dist(),ntile()	#ランク関数
+##row_number()	#行番号
+##cumsum(),cumprod(),cummax(),cummin(),cumall(),cumany(),cummean()	#累積和、累積積
+##RcppRoll::roll_*()	#移動平均(roll_mean())、移動分散(roll_var())
+
+##標本と平均との差を求める
+###data0110 %>%
+###mutate(sales_mean = mean(sales),
+###sales_err = sales - sales_mean)
+
+#複数列への操作
+###runifの結果を再現性のあるものにするため、乱数のシードを固定
+set.seed(1)
+###runif()で0~100の範囲の乱数を10個ずつ作成
+d<-tibble(
+id=1:10
+test1<-runif(10,max=100),
+test2<-runif(10,max=100),
+test3<-runif(10,max=100),
+test4<-runif(10,max=100)
+)
+
+##tidy_dataへの変換(脳死でやるバージョン)
+d %>%
+mutate(
+test1=round(test1),
+test2=round(test2),
+test3=round(test3),
+test4=round(test4)
+)
+##tidy_dataへの変換(考えてやるバージョン)
+d_tidy<-d %>%
+###gather()でもselectのセマンテイクスが使える
+gather(key="key",value="value",test1:test4
+###数字を丸める
+d_tidy %>%
+mutate(value=round(value))
+
+###集計関数やウィンドウ関数を使用する場合
+d_tidy %>%
+group_by(test) %>%
+summarise(value_avg=mean(value))
+#元の横長のデータ形式に直す
+d_tidy %>%
+mutate(value=round(value)) %>%
+spread(key=test,value=value)
+
+#tidy_dataに変換できない場合(scoped_function)
+d %>%
+mutate_all(round)
+d %>%
+mutate_if(is.numeric,round)
+d %>%
+mutate_at(vars(-id),round)
